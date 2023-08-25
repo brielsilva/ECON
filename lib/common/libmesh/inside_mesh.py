@@ -26,19 +26,21 @@ class MeshIntersector:
         # assert(np.allclose(triangles.reshape(-1, 3).max(0), resolution - 0.5))
 
         triangles2d = triangles[:, :, :2]
-        self._tri_intersector2d = TriangleIntersector2d(triangles2d, resolution)
+        self._tri_intersector2d = TriangleIntersector2d(
+            triangles2d, resolution)
 
     def query(self, points):
         # Rescale points
         points = self.rescale(points)
 
         # placeholder result with no hits we'll fill in later
-        contains = np.zeros(len(points), dtype=np.bool)
-        hole_points = np.zeros(len(points), dtype=np.bool)
+        contains = np.zeros(len(points), dtype=bool)
+        hole_points = np.zeros(len(points), dtype=bool)
 
         # cull points outside of the axis aligned bounding box
         # this avoids running ray tests unless points are close
-        inside_aabb = np.all((0 <= points) & (points <= self.resolution), axis=1)
+        inside_aabb = np.all((0 <= points) & (
+            points <= self.resolution), axis=1)
         if not inside_aabb.any():
             return contains, hole_points
 
@@ -47,7 +49,8 @@ class MeshIntersector:
         points = points[mask]
 
         # Compute intersection depth and check order
-        points_indices, tri_indices = self._tri_intersector2d.query(points[:, :2])
+        points_indices, tri_indices = self._tri_intersector2d.query(
+            points[:, :2])
 
         triangles_intersect = self._triangles[tri_indices]
         points_intersect = points[points_indices]
@@ -129,7 +132,7 @@ class TriangleIntersector2d:
         return point_indices, tri_indices
 
     def check_triangles(self, points, triangles):
-        contains = np.zeros(points.shape[0], dtype=np.bool)
+        contains = np.zeros(points.shape[0], dtype=bool)
         A = triangles[:, :2] - triangles[:, 2:]
         A = A.transpose([0, 2, 1])
         y = points - triangles[:, 2]

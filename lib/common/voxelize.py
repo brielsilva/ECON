@@ -38,7 +38,7 @@ def make_3d_grid(bb_min, bb_max, shape):
 class VoxelGrid:
     def __init__(self, data, loc=(0., 0., 0.), scale=1):
         assert (data.shape[0] == data.shape[1] == data.shape[2])
-        data = np.asarray(data, dtype=np.bool)
+        data = np.asarray(data, dtype=bool)
         loc = np.asarray(loc)
         self.data = data
         self.loc = loc
@@ -152,7 +152,7 @@ class VoxelGrid:
             v_idx[f1_l_x, f1_l_y + 1, f1_l_z + 1],
             v_idx[f1_l_x, f1_l_y + 1, f1_l_z],
         ],
-                             axis=1)
+            axis=1)
 
         faces_1_r = np.stack([
             v_idx[f1_r_x, f1_r_y, f1_r_z],
@@ -160,7 +160,7 @@ class VoxelGrid:
             v_idx[f1_r_x, f1_r_y + 1, f1_r_z + 1],
             v_idx[f1_r_x, f1_r_y, f1_r_z + 1],
         ],
-                             axis=1)
+            axis=1)
 
         faces_2_l = np.stack([
             v_idx[f2_l_x, f2_l_y, f2_l_z],
@@ -168,7 +168,7 @@ class VoxelGrid:
             v_idx[f2_l_x + 1, f2_l_y, f2_l_z + 1],
             v_idx[f2_l_x, f2_l_y, f2_l_z + 1],
         ],
-                             axis=1)
+            axis=1)
 
         faces_2_r = np.stack([
             v_idx[f2_r_x, f2_r_y, f2_r_z],
@@ -176,7 +176,7 @@ class VoxelGrid:
             v_idx[f2_r_x + 1, f2_r_y, f2_r_z + 1],
             v_idx[f2_r_x + 1, f2_r_y, f2_r_z],
         ],
-                             axis=1)
+            axis=1)
 
         faces_3_l = np.stack([
             v_idx[f3_l_x, f3_l_y, f3_l_z],
@@ -184,7 +184,7 @@ class VoxelGrid:
             v_idx[f3_l_x + 1, f3_l_y + 1, f3_l_z],
             v_idx[f3_l_x + 1, f3_l_y, f3_l_z],
         ],
-                             axis=1)
+            axis=1)
 
         faces_3_r = np.stack([
             v_idx[f3_r_x, f3_r_y, f3_r_z],
@@ -192,7 +192,7 @@ class VoxelGrid:
             v_idx[f3_r_x + 1, f3_r_y + 1, f3_r_z],
             v_idx[f3_r_x, f3_r_y + 1, f3_r_z],
         ],
-                             axis=1)
+            axis=1)
 
         faces = np.concatenate([
             faces_1_l,
@@ -202,7 +202,7 @@ class VoxelGrid:
             faces_3_l,
             faces_3_r,
         ],
-                               axis=0)
+            axis=0)
 
         vertices = self.loc + self.scale * vertices
         mesh = trimesh.Trimesh(vertices, faces, process=False)
@@ -223,14 +223,15 @@ class VoxelGrid:
         # i1, i2, i3 have sizes (batch_size, T)
         i1, i2, i3 = points_i[..., 0], points_i[..., 1], points_i[..., 2]
         # Only use indices inside bounding box
-        mask = ((i1 >= 0) & (i2 >= 0) & (i3 >= 0) & (nx > i1) & (nx > i2) & (nx > i3))
+        mask = ((i1 >= 0) & (i2 >= 0) & (i3 >= 0) &
+                (nx > i1) & (nx > i2) & (nx > i3))
         # Prevent out of bounds error
         i1 = i1[mask]
         i2 = i2[mask]
         i3 = i3[mask]
 
         # Compute values, default value outside box is 0
-        occ = np.zeros(points.shape[:-1], dtype=np.bool)
+        occ = np.zeros(points.shape[:-1], dtype=bool)
         occ[mask] = self.data[i1, i2, i3]
 
         return occ
@@ -247,7 +248,8 @@ def voxelize_ray(mesh, resolution):
 def voxelize_fill(mesh, resolution):
     bounds = mesh.bounds
     if (np.abs(bounds) >= 0.5).any():
-        raise ValueError('voxelize fill is only supported if mesh is inside [-0.5, 0.5]^3/')
+        raise ValueError(
+            'voxelize fill is only supported if mesh is inside [-0.5, 0.5]^3/')
 
     occ = voxelize_surface(mesh, resolution)
     occ = ndimage.morphology.binary_fill_holes(occ)
@@ -320,7 +322,8 @@ def voxelize(in_path, res):
             return
 
         mesh = trimesh.load(in_path + '/isosurf_scaled.off', process=False)
-        occupancies = VoxelGrid.from_mesh(mesh, res, loc=[0, 0, 0], scale=1).data
+        occupancies = VoxelGrid.from_mesh(
+            mesh, res, loc=[0, 0, 0], scale=1).data
         occupancies = np.reshape(occupancies, -1)
 
         if not occupancies.any():
